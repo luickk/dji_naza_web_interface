@@ -8,7 +8,7 @@
    Naza V2 interface main repository. And add the resulting binary as ccontrol.exe
    to this directory.
    */
- 
+
 $forward = $_GET["forward"];
 $back = $_GET["back"];
 $throttle = $_GET["throttle"];
@@ -21,34 +21,34 @@ $arm = $_GET["arm"];
 $neutral = $_GET["neutral"];
 
 if($forward!=""){
-  echo "forward with $forward"; ?><br><?php
-  echo shell_exec ("sudo ./ccontrol.exe back $forward");
+  echo "forward with $forward \n"; ?><br><?php
+  echo shell_exec ("sudo ./ccontrol.exe forward $forward");
 } else if($back!=""){
-  echo "back with $back"; ?><br><?php
+  echo "back with $back \n"; ?><br><?php
   echo shell_exec ("sudo ./ccontrol.exe back $back");
 } else if($throttle!=""){
-  echo "throttle with $throttle"; ?><br><?php
+  echo "throttle with $throttle \n"; ?><br><?php
   echo shell_exec ("sudo ./ccontrol.exe throttle $throttle");
 } else if($left!=""){
-  echo "left with $left"; ?><br><?php
+  echo "left with $left \n"; ?><br><?php
   echo shell_exec ("sudo ./ccontrol.exe left $left");
 } else if($right!=""){
-  echo "right with $right"; ?><br><?php
+  echo "right with $right \n"; ?><br><?php
   echo shell_exec ("sudo ./ccontrol.exe right $right");
 } else if($tright!=""){
-  echo "tright with $tright"; ?><br><?php
+  echo "tright with $tright \n"; ?><br><?php
   echo shell_exec ("sudo ./ccontrol.exe tright $tright");
 } else if($tleft!=""){
-  echo "tleft with $tleft"; ?><br><?php
+  echo "tleft with $tleft \n"; ?><br><?php
   echo shell_exec ("sudo ./ccontrol.exe tleft $tleft");
 } else if($flm!=""){
-  echo "flm with $flm"; ?><br><?php
+  echo "flm with $flm \n"; ?><br><?php
   echo shell_exec ("sudo ./ccontrol.exe flm $flm");
 } else if($arm!=""){
-  echo "arm with $arm"; ?><br><?php
+  echo "arm with $arm \n"; ?><br><?php
   echo shell_exec ("sudo ./ccontrol.exe arm");
 } else if($neutral!=""){
-  echo "neutral"; ?><br><?php
+  echo "neutral \n"; ?><br><?php
   echo shell_exec ("sudo ./ccontrol.exe neutral");
 }
 ?>

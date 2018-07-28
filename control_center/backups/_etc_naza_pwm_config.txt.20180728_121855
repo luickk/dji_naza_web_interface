@@ -1,0 +1,38 @@
+[A]
+left = 400
+middle = 315
+right = 220
+stick_motion = norm
+channel = 0
+
+
+[E]
+left = 400
+middle = 315
+right = 220
+stick_motion = norm
+channel = 1
+
+
+[T]
+left = 400
+right = 230
+stick_motion = norm
+channel = 2
+
+
+[R]
+left = 400
+middle = 315
+right = 220
+stick_motion = norm
+channel = 3
+
+
+[U]
+gps = 390
+failsafe = 350
+selectable = 250
+channel = 4
+
+

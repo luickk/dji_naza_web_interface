@@ -14,6 +14,7 @@ $heading = $_GET["heading"];
 $lat = $_GET["lat"];
 $lon = $_GET["lon"];
 $numsat = $_GET["numsat"];
+$all = $_GET["all"];
 
 $raw_gps_data = shell_exec ("sudo ./bins/rgps.exe");
 $gps_data = explode(",", $raw_gps_data);
@@ -28,5 +29,7 @@ if($alt!=""){
   echo $gps_data[1];
 } else if($numsat!=""){
   echo $gps_data[0];
+} else if($all!=""){
+  echo $raw_gps_data;
 }
 ?>

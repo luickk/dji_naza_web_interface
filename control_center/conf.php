@@ -12,7 +12,7 @@
   <meta content='width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0, shrink-to-fit=no' name='viewport' />
   <!--     Fonts and icons     -->
   <link href="https://fonts.googleapis.com/css?family=Montserrat:400,700,200" rel="stylesheet" />
-  <link href="https://use.fontawesome.com/releases/v5.0.6/css/all.css" rel="stylesheet">
+  <link href="assets/web-fonts-with-css/css/all.css" rel="stylesheet">
   <!-- CSS Files -->
   <link href="assets/css/bootstrap.min.css" rel="stylesheet" />
   <link href="assets/css/now-ui-dashboard.css?v=1.1.0" rel="stylesheet" />
@@ -51,6 +51,12 @@
             <a href="./map.html">
               <i class="now-ui-icons location_map-big"></i>
               <p>GPS</p>
+            </a>
+          </li>
+          <li>
+            <a href="./tools.html">
+              <i class="fas fa-wrench"></i>
+              <p>Tools</p>
             </a>
           </li>
           <li>

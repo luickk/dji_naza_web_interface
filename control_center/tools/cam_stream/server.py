@@ -4,6 +4,10 @@ import sys
 import io
 import os
 import shutil
+import datetime
+import cv2
+import numpy as np
+import queue as queue
 from subprocess import Popen, PIPE
 from string import Template
 from struct import Struct
@@ -11,8 +15,10 @@ from threading import Thread
 from time import sleep, time
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from wsgiref.simple_server import make_server
-
+import time
+import collections
 import picamera
+
 from ws4py.websocket import WebSocket
 from ws4py.server.wsgirefserver import (
     WSGIServer,
@@ -23,11 +29,11 @@ from ws4py.server.wsgiutils import WebSocketWSGIApplication
 
 ###########################################
 # CONFIGURATION
-WIDTH = 1024
-HEIGHT = 768
-FRAMERATE = 24
-HTTP_PORT = 8082
+WIDTH = 640
+HEIGHT = 480
+FRAMERATE = 20
 WS_PORT = 8084
+RECORDINGS_PATH = "/var/www/html/dji_naza_web_interface/control_center/tools/recordings/"
 COLOR = u'#444'
 BGCOLOR = u'#333'
 JSMPEG_MAGIC = b'jsmp'
@@ -37,57 +43,32 @@ HFLIP = True
 
 ###########################################
 
+def convertYUV(stream):
+    fwidth = (WIDTH + 31) // 32 * 32
+    fheight = (HEIGHT + 15) // 16 * 16
+    A = np.frombuffer(stream, dtype=np.uint8)
+    Y = A[:fwidth*fheight]
+    U = A[fwidth*fheight:fwidth*fheight+(fwidth//2)*(fheight//2)]
+    V = A[fwidth*fheight+(fwidth//2)*(fheight//2):]
+    Y = Y.reshape((fheight, fwidth))
+    U = U.reshape((fheight//2, fwidth//2))
+    V = V.reshape((fheight//2, fwidth//2))
 
-class StreamingHttpHandler(BaseHTTPRequestHandler):
-    def do_HEAD(self):
-        self.do_GET()
+    U = cv2.resize(U, (fwidth,fheight), interpolation = cv2.INTER_NEAREST )
+    V = cv2.resize(V, (fwidth,fheight), interpolation = cv2.INTER_NEAREST )
+    YUV = (np.dstack([Y,U,V])).astype(np.uint8)
+    RGB = cv2.cvtColor(YUV, cv2.COLOR_YUV2RGB, 3)
 
-    def do_GET(self):
-        if self.path == '/':
-            self.send_response(301)
-            self.send_header('Location', '/index.html')
-            self.end_headers()
-            return
-        elif self.path == '/jsmpg.js':
-            content_type = 'application/javascript'
-            content = self.server.jsmpg_content
-        elif self.path == '/index.html':
-            content_type = 'text/html; charset=utf-8'
-            tpl = Template(self.server.index_template)
-            content = tpl.safe_substitute(dict(
-                WS_PORT=WS_PORT, WIDTH=WIDTH, HEIGHT=HEIGHT, COLOR=COLOR,
-                BGCOLOR=BGCOLOR))
-        else:
-            self.send_error(404, 'File not found')
-            return
-        content = content.encode('utf-8')
-        self.send_response(200)
-        self.send_header('Content-Type', content_type)
-        self.send_header('Content-Length', len(content))
-        self.send_header('Last-Modified', self.date_time_string(time()))
-        self.end_headers()
-        if self.command == 'GET':
-            self.wfile.write(content)
-
-
-class StreamingHttpServer(HTTPServer):
-    def __init__(self):
-        super(StreamingHttpServer, self).__init__(
-                ('', HTTP_PORT), StreamingHttpHandler)
-        with io.open('index.html', 'r') as f:
-            self.index_template = f.read()
-        with io.open('jsmpg.js', 'r') as f:
-            self.jsmpg_content = f.read()
-
+    return RGB
 
 class StreamingWebSocket(WebSocket):
     def opened(self):
         self.send(JSMPEG_HEADER.pack(JSMPEG_MAGIC, WIDTH, HEIGHT), binary=True)
 
-
 class BroadcastOutput(object):
-    def __init__(self, camera):
+    def __init__(self, camera, q):
         print('Spawning background conversion process')
+        self.q = q
         self.converter = Popen([
             'ffmpeg',
             '-f', 'rawvideo',
@@ -104,7 +85,7 @@ class BroadcastOutput(object):
 
     def write(self, b):
         self.converter.stdin.write(b)
-
+        self.q.append(b)
     def flush(self):
         print('Waiting for background conversion process to exit')
         self.converter.stdin.close()
@@ -112,7 +93,7 @@ class BroadcastOutput(object):
 
 
 class BroadcastThread(Thread):
-    def __init__(self, converter, websocket_server):
+    def __init__(self, converter, websocket_server, q):
         super(BroadcastThread, self).__init__()
         self.converter = converter
         self.websocket_server = websocket_server
@@ -128,6 +109,26 @@ class BroadcastThread(Thread):
         finally:
             self.converter.stdout.close()
 
+class RecordThread(Thread):
+    def __init__(self, q):
+        Thread.__init__(self)
+        self.q = q
+        print("Starting recording thread")
+        self.vidw = cv2.VideoWriter(time.strftime(RECORDINGS_PATH + "%Y-%m-%d %H:%M:%S", time.gmtime())+'-output.avi', cv2.VideoWriter_fourcc(*'XVID'), FRAMERATE, (WIDTH, HEIGHT))
+        self.killb=False
+
+    def run(self):
+        while True:
+            try:
+                b = self.q.pop()
+                self.vidw.write(convertYUV(b))
+            except IndexError:
+                pass
+            if self.killb:
+                break
+
+    def kill(self):
+        self.killb = True
 
 def main():
     print('Initializing camera')
@@ -146,37 +147,35 @@ def main():
             app=WebSocketWSGIApplication(handler_cls=StreamingWebSocket))
         websocket_server.initialize_websockets_manager()
         websocket_thread = Thread(target=websocket_server.serve_forever)
-        print('Initializing HTTP server on port %d' % HTTP_PORT)
-        #http_server = StreamingHttpServer()
-        #http_thread = Thread(target=http_server.serve_forever)
         print('Initializing broadcast thread')
-        output = BroadcastOutput(camera)
-        broadcast_thread = BroadcastThread(output.converter, websocket_server)
+        q = collections.deque()
+        output = BroadcastOutput(camera, q)
+        broadcast_thread = BroadcastThread(output.converter, websocket_server, q)
         print('Starting recording')
         camera.start_recording(output, 'yuv')
+        record_thread = RecordThread(q)
         try:
             print('Starting websockets thread')
             websocket_thread.start()
-            print('Starting HTTP server thread')
-            #http_thread.start()
             print('Starting broadcast thread')
             broadcast_thread.start()
+            print('Starting file recording thread')
+            record_thread.start()
+
             while True:
                 camera.wait_recording(1)
         except KeyboardInterrupt:
             pass
         finally:
+            record_thread.kill()
+            print('Waiting for websockets thread to finish')
             print('Stopping recording')
             camera.stop_recording()
             print('Waiting for broadcast thread to finish')
             broadcast_thread.join()
-            print('Shutting down HTTP server')
-            http_server.shutdown()
             print('Shutting down websockets server')
             websocket_server.shutdown()
-            print('Waiting for HTTP server thread to finish')
-            #http_thread.join()
-            print('Waiting for websockets thread to finish')
+            print('Waiting for recording to shutdown')
             websocket_thread.join()
 
 

@@ -11,3 +11,8 @@ And chown the main dir to www-data (php) user <br>
 Also you have to compile the core_control example/tool from the <br>
 Naza V2 interface [main repository](https://github.com/MrGrimod/dji_naza_interface_c-). <br>
 And add the resulting binary as ccontrol.exe to this directory.
+
+## Dependecies:
+### Cam (python3):
+-opencv
+-picamera

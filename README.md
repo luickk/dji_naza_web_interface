@@ -13,6 +13,6 @@ Naza V2 interface [main repository](https://github.com/MrGrimod/dji_naza_interfa
 And add the resulting binary as ccontrol.exe to this directory.
 
 ## Dependecies:
-### Cam (python3):
--opencv
+### Camera livestream (python3): <br>
+-opencv <br>
 -picamera

@@ -133,16 +133,26 @@
   <!-- Now Ui Dashboard DEMO methods, don't include it in your project! -->
   <script src="assets/demo/demo.js"></script>
   <script>
+    function sleep(ms) {
+      return new Promise(resolve => setTimeout(resolve, ms));
+    }
+    async function sync_gps(){
+      do {
+        await sleep(1000);
+        sync_gps_data();
+      } while (1){
+
+      }
+    }
     $(document).ready(function() {
       sync_gps_data();
+      sync_gps();
     });
-  </script>
-  <script type="text/javascript">
 
     $("#refresh").click(function(){
       sync_gps_data();
     });
-    </script>
+  </script>
 </body>
 
 </html>

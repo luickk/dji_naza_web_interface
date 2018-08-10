@@ -32,7 +32,7 @@ from ws4py.server.wsgiutils import WebSocketWSGIApplication
 # CONFIGURATION
 WIDTH = 640
 HEIGHT = 480
-FRAMERATE = 20
+FRAMERATE = 30
 WS_PORT = 8084
 CONTROL_SERVER_PORT=4444
 RECORDINGS_PATH = "/var/www/html/dji_naza_web_interface/control_center/tools/recordings/"
@@ -125,7 +125,7 @@ class RecordThread(Thread):
 
     def createvid(self):
         print("Start recording")
-        self.vidw = cv2.VideoWriter(time.strftime(RECORDINGS_PATH + "%Y-%m-%d %H:%M:%S", time.gmtime())+'-output.avi', cv2.VideoWriter_fourcc(*'XVID'), FRAMERATE-5, (WIDTH, HEIGHT))
+        self.vidw = cv2.VideoWriter(time.strftime(RECORDINGS_PATH + "%Y-%m-%d %H:%M:%S", time.gmtime())+'-output.avi', cv2.VideoWriter_fourcc(*'XVID'), FRAMERATE-13, (WIDTH, HEIGHT))
         while True:
             try:
                 b = self.q.pop()

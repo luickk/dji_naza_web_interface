@@ -18,6 +18,7 @@ from wsgiref.simple_server import make_server
 import time
 import collections
 import picamera
+import urllib.parse as urlparse
 
 from ws4py.websocket import WebSocket
 from ws4py.server.wsgirefserver import (
@@ -40,6 +41,8 @@ JSMPEG_MAGIC = b'jsmp'
 JSMPEG_HEADER = Struct('>4sHH')
 VFLIP = True
 HFLIP = True
+
+q = collections.deque()
 
 ###########################################
 
@@ -113,22 +116,89 @@ class RecordThread(Thread):
     def __init__(self, q):
         Thread.__init__(self)
         self.q = q
-        print("Starting recording thread")
-        self.vidw = cv2.VideoWriter(time.strftime(RECORDINGS_PATH + "%Y-%m-%d %H:%M:%S", time.gmtime())+'-output.avi', cv2.VideoWriter_fourcc(*'XVID'), FRAMERATE, (WIDTH, HEIGHT))
+        print("Start recording thread")
         self.killb=False
+        self.killv=False
+        self.killi=False
 
-    def run(self):
+    def createvid(self):
+        print("Start recording")
+        self.vidw = cv2.VideoWriter(time.strftime(RECORDINGS_PATH + "%Y-%m-%d %H:%M:%S", time.gmtime())+'-output.avi', cv2.VideoWriter_fourcc(*'XVID'), FRAMERATE, (WIDTH, HEIGHT))
         while True:
             try:
                 b = self.q.pop()
                 self.vidw.write(convertYUV(b))
             except IndexError:
                 pass
+            if self.killi:
+                self.killi = False
+                break
+
+    def run(self):
+        while True:
+            try:
+                self.q.pop()
+            except IndexError:
+                pass
+            if self.killv:
+                self.createvid()
+                self.killv = False
             if self.killb:
                 break
 
+
+    def start_vid(self):
+        self.killv=True
+
+    def stop_vid(self):
+        print("Stop recording")
+        self.killv=False
+        self.killi=True
+
     def kill(self):
+        self.killv = True
         self.killb = True
+
+record_thread = RecordThread(q)
+
+class RequestHandler(BaseHTTPRequestHandler):
+
+    def do_GET(self):
+
+        # Send response status code
+        self.send_response(200)
+
+        # Send headers
+        self.send_header('Content-type','text/html')
+        self.end_headers()
+
+        # Send message back to client
+        query = urlparse.parse_qs(urlparse.urlparse(self.path).query).get('record', None)
+        if query == None:
+            pass
+        elif query[0]=="on":
+            record_thread.start_vid()
+        elif query[0]=="off":
+            record_thread.stop_vid()
+        elif query[0]=="stat":
+            print("Writing status")
+            self.wfile.write(bytes("on", "utf8"))
+
+        return
+
+class ThreadedHTTPServer(object):
+    handler = RequestHandler
+    def __init__(self, host, port):
+        self.server = HTTPServer((host, port), self.handler)
+        self.server_thread = Thread(target=self.server.serve_forever)
+        self.server_thread.daemon = True
+
+    def start(self):
+        self.server_thread.start()
+
+    def stop(self):
+        self.server.shutdown()
+        self.server.server_close()
 
 def main():
     print('Initializing camera')
@@ -139,6 +209,10 @@ def main():
         camera.hflip = HFLIP # flips image left-right, as needed
         sleep(1) # camera warm-up time
         print('Initializing websockets server on port %d' % WS_PORT)
+        # Start the threaded server
+        server = ThreadedHTTPServer("", 4444)
+        server.start()
+
         WebSocketWSGIHandler.http_version = '1.1'
         websocket_server = make_server(
             '', WS_PORT,
@@ -148,12 +222,10 @@ def main():
         websocket_server.initialize_websockets_manager()
         websocket_thread = Thread(target=websocket_server.serve_forever)
         print('Initializing broadcast thread')
-        q = collections.deque()
         output = BroadcastOutput(camera, q)
         broadcast_thread = BroadcastThread(output.converter, websocket_server, q)
-        print('Starting recording')
+        print('Start recording')
         camera.start_recording(output, 'yuv')
-        record_thread = RecordThread(q)
         try:
             print('Starting websockets thread')
             websocket_thread.start()
@@ -167,7 +239,6 @@ def main():
         except KeyboardInterrupt:
             pass
         finally:
-            record_thread.kill()
             print('Waiting for websockets thread to finish')
             print('Stopping recording')
             camera.stop_recording()
@@ -176,6 +247,8 @@ def main():
             print('Shutting down websockets server')
             websocket_server.shutdown()
             print('Waiting for recording to shutdown')
+            record_thread.kill()
+            print('Waiting for websockets server')
             websocket_thread.join()
 
 

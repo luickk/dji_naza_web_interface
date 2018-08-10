@@ -15,23 +15,6 @@ function perform_action(action, val) {
         }
    });
 }
-
-
-function sync_gps_data() {
-  $.ajax("../gps.php?all=1", {
-    success: function(data) {
-      $("#numberofsats").text(data.split(',')[0]);
-      $("#alt").text(data.split(',')[4]);
-      $("#heading").text(data.split(',')[3]);
-      $("#latlon").text(data.split(',')[2] + "," + data.split(',')[1]);
-      $("#latestrefresh").text(new Date().toUTCString());
-    },
-    error: function() {
-
-    }
-  });
-}
-
 function recalibrate() {
   $.ajax("../recalibrate.php", {
         success: function(data) {

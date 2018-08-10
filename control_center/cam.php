@@ -56,7 +56,7 @@
             </a>
           </li>
           <li class="active">
-            <a href="./cam.html">
+            <a href="./cam.php">
               <i class="fa fa-camera"></i>
               <p>Cam</p>
             </a>

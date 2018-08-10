@@ -34,6 +34,7 @@ WIDTH = 640
 HEIGHT = 480
 FRAMERATE = 20
 WS_PORT = 8084
+CONTROL_SERVER_PORT=4444
 RECORDINGS_PATH = "/var/www/html/dji_naza_web_interface/control_center/tools/recordings/"
 COLOR = u'#444'
 BGCOLOR = u'#333'
@@ -120,6 +121,7 @@ class RecordThread(Thread):
         self.killb=False
         self.killv=False
         self.killi=False
+        self.isRecording=False
 
     def createvid(self):
         print("Start recording")
@@ -128,11 +130,14 @@ class RecordThread(Thread):
             try:
                 b = self.q.pop()
                 self.vidw.write(convertYUV(b))
+                self.isRecording = True
             except IndexError:
                 pass
             if self.killi:
                 self.killi = False
                 break
+    def getStat(self):
+        return self.isRecording
 
     def run(self):
         while True:
@@ -140,6 +145,7 @@ class RecordThread(Thread):
                 self.q.pop()
             except IndexError:
                 pass
+            self.isRecording = False
             if self.killv:
                 self.createvid()
                 self.killv = False
@@ -169,7 +175,7 @@ class RequestHandler(BaseHTTPRequestHandler):
         self.send_response(200)
 
         # Send headers
-        self.send_header('Content-type','text/html')
+        self.send_header('Access-Control-Allow-Origin', '*')
         self.end_headers()
 
         # Send message back to client
@@ -181,8 +187,10 @@ class RequestHandler(BaseHTTPRequestHandler):
         elif query[0]=="off":
             record_thread.stop_vid()
         elif query[0]=="stat":
-            print("Writing status")
-            self.wfile.write(bytes("on", "utf8"))
+            if record_thread.getStat():
+                self.wfile.write(bytes("on", "utf8"))
+            elif not record_thread.getStat():
+                self.wfile.write(bytes("off", "utf8"))
 
         return
 
@@ -210,8 +218,7 @@ def main():
         sleep(1) # camera warm-up time
         print('Initializing websockets server on port %d' % WS_PORT)
         # Start the threaded server
-        server = ThreadedHTTPServer("", 4444)
-        server.start()
+        server = ThreadedHTTPServer("", CONTROL_SERVER_PORT)
 
         WebSocketWSGIHandler.http_version = '1.1'
         websocket_server = make_server(
@@ -233,6 +240,8 @@ def main():
             broadcast_thread.start()
             print('Starting file recording thread')
             record_thread.start()
+            print('Starting web server control thread')
+            server.start()
 
             while True:
                 camera.wait_recording(1)
@@ -248,6 +257,8 @@ def main():
             websocket_server.shutdown()
             print('Waiting for recording to shutdown')
             record_thread.kill()
+            print('Stopping web server control thread')
+            server.stop()
             print('Waiting for websockets server')
             websocket_thread.join()
 

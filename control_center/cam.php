@@ -101,7 +101,8 @@
                   change this internal resolution to whatever the source provides. The size the
                   canvas is displayed on the website is dictated by the CSS style.
                 -->
-                <canvas id="videoCanvas" width="1024" height="768">
+                <!-- style="width: 100%;" -->
+                <canvas id="videoCanvas">
                   <p>
                     Please use a browser that supports the Canvas Element, like
                     <a href="http://www.google.com/chrome">Chrome</a>,
@@ -122,7 +123,17 @@
                   var player = new jsmpeg(client, {canvas:canvas});
                 </script>
 
+                <div class="card">
+                  <h5 class="card-header">Recorder</h5>
+                  <div class="card-body">
+                    <button id="startrecording" type="button" class="btn btn-primary">Start recording</button>
+                    <button id="stoprecording" type="button" class="btn btn-light">Stoping recording</button> <br> <br>
+                    <p>Status: <span id="stat" class="badge badge-primary"></span></p> <br>
+                    <p>Latest Refresh: <span id="latestrefresh"></span></p>
+                  </div>
+                </div>
               </div>
+
             </div>
           </div>
         </div>
@@ -146,6 +157,39 @@
   <script src="assets/js/now-ui-dashboard.min.js?v=1.1.0" type="text/javascript"></script>
   <!-- Now Ui Dashboard DEMO methods, don't include it in your project! -->
   <script src="assets/demo/demo.js"></script>
+  <script type="text/javascript">
+  function getRecordStat() {
+    $.ajax("http://"+window.location.hostname+":4444?record=stat", {
+            success: function(data) {
+
+              $("#stat").text(data);
+
+              $("#latestrefresh").text(new Date().toUTCString());
+
+            },error: function() {  }  });
+    }
+  function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
+  async function sync(){
+    do {
+      await sleep(1000);
+      getRecordStat();
+    } while (1){}
+  }
+
+  $(document).ready(function() {
+    sync();
+  });
+
+  $("#startrecording").click(function(){
+    $.ajax("http://"+window.location.hostname+":4444?record=on", {success: function(data){},error: function(){}});
+  });
+
+  $("#stoprecording").click(function(){
+    $.ajax("http://"+window.location.hostname+":4444?record=off", {success: function(data) {},error: function(){}});
+  });
+  </script>
 </body>
 
 </html>

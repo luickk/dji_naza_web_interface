@@ -36,6 +36,12 @@
       <div class="sidebar-wrapper">
         <ul class="nav">
           <li>
+            <a href="./tools.html">
+              <i class="fas fa-wrench"></i>
+              <p>Tools</p>
+            </a>
+          </li>
+          <li>
             <a href="./channels.html">
               <i class="now-ui-icons design_app"></i>
               <p>Channels</p>
@@ -54,15 +60,15 @@
             </a>
           </li>
           <li>
-            <a href="./tools.html">
-              <i class="fas fa-wrench"></i>
-              <p>Tools</p>
-            </a>
-          </li>
-          <li>
             <a href="./cam.php">
               <i class="fa fa-camera"></i>
               <p>Cam</p>
+            </a>
+          </li>
+          <li>
+            <a href="./jobs.php">
+              <i class="fas fa-tasks"></i>
+              <p>Jobs</p>
             </a>
           </li>
         </ul>

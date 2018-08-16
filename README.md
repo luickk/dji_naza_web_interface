@@ -11,6 +11,8 @@ And chown the main dir to www-data (php) user <br>
 Also you have to compile the tools/ binaries from the <br>
 [Naza V2 C++ interface](https://github.com/MrGrimod/dji_naza_interface_c-) and move them to the bins/ folder. <br>
 
+## Demo Video:
+https://www.youtube.com/watch?v=JNzVcIv4pL8
 
 ## Dependecies:
 ### Camera livestream (python3): <br>

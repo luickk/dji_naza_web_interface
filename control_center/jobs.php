@@ -143,11 +143,11 @@
   <!-- Control Center Js -->
   <script src="ccenter.js"></script>
   <script>
-  function beginMission(){
-    $.ajax("../jobs.php?action=start&command=sudo%20./../bins/rgps.exe", { success: function(data) {},error: function() {}  });
-  }
   function startStream(){
     $.ajax("../jobs.php?action=start&command=sudo%20screen%20-dmS%20camStream%20bash%20-c%20%27python3%20/var/www/html/dji_naza_web_interface/control_center/tools/cam_stream/server.py%27", { success: function(data) {},error: function() {}  });
+  }
+  function startMission(mission_hold){
+    $.ajax("../jobs.php?action=start&command=sudo%20screen%20-dmS%20"+mission_hold+"%20/var/www/html/dji_naza_web_interface/bins/missions/"+mission_hold+".exe", { success: function(data) {},error: function() {}  });
   }
   function syncScreens(){
       $.ajax({
@@ -176,7 +176,7 @@
       syncScreens();
     });
     $("#beginMission").click(function(){
-      beginMission();
+      startMission("mission_hold");
     });
     $("#startStream").click(function(){
       startStream();

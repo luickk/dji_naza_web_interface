@@ -34,7 +34,7 @@
     <!-- Left Panel -->
 
     <aside id="header" class="left-panel">
-	
+
     </aside><!-- /#left-panel -->
 
     <!-- Left Panel -->
@@ -72,7 +72,7 @@
                 <div class="card-body ">
                 <ul class="list-group">
                   <div id="screenList"></div>
-                </ul> 
+                </ul>
 				<br> <br>
                 <p>Latest Refresh: <span id="latestrefresh"></span></p>
               </div>
@@ -84,6 +84,7 @@
               <div class="card-body ">
               <ul class="list-group">
                 <li class="list-group-item list-group-item-danger">Mission  <button type="button" id="beginMission" class="btn btn-warning">Begin</button></li>
+                <li class="list-group-item list-group-item-danger">GPS Deamon  <button type="button" id="startgpsdeamon" class="btn btn-light">Start</button></li>
                 <li class="list-group-item list-group-item-light">Camera Stream  <button type="button" id="startStream" class="btn btn-light">Start</button></li>
               </ul>
             </div>
@@ -95,9 +96,9 @@
 
       </footer>
     </div>
-	
+
     <!-- Right Panel -->
-	
+
     <script src="assets/js/jquery.min.js"></script>
     <script src="assets/js/vendor/jquery-2.1.4.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.3/umd/popper.min.js"></script>
@@ -115,6 +116,9 @@
 	<script>
 	function startStream(){
 	$.ajax("../jobs.php?action=start&command=sudo%20screen%20-dmS%20camStream%20bash%20-c%20%27python3%20/var/www/html/dji_naza_web_interface_2/control_center/tools/cam_stream/server.py%27", { success: function(data) {},error: function() {}  });
+	}
+	function startgpsdeamon(){
+	$.ajax("../jobs.php?action=start&command=sudo%20screen+-dmS+gpsDeamons+bash+-c+%27%2Fhome%2Fpi%2Fdji_naza_interface_c-%2Ftools%2Fcore_gps_deamon%2Fgpsd.exe%27&rlz=1C1CHBD_deDE739DE739&oq=%2Fusr%2Fbin%2Fscreen+-S+gpsDeamons+bash+-c+%27%2Fhome%2Fpi%2Fdji_naza_interface_c-%2Ftools%2Fcore_gps_deamon%2Fgpsd.exe", { success: function(data) {},error: function() {}  });
 	}
 	function startMission(mission_hold){
 	$.ajax("../jobs.php?action=start&command=sudo%20screen%20-dmS%20"+mission_hold+"%20/var/www/html/dji_naza_web_interface_2/bins/missions/"+mission_hold+".exe", { success: function(data) {},error: function() {}  });
@@ -150,6 +154,9 @@
 	});
 	$("#startStream").click(function(){
 	  startStream();
+	});
+	$("#startgpsdeamon").click(function(){
+	  startgpsdeamon();
 	});
 	</script>
 	<script type="text/javascript">

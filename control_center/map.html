@@ -36,7 +36,7 @@
     <!-- Left Panel -->
 
     <aside id="header" class="left-panel">
-	
+
     </aside><!-- /#left-panel -->
 
     <!-- Left Panel -->
@@ -114,9 +114,9 @@
           </div>
         </div>
       </div>
-	
+
     <!-- Right Panel -->
-	
+
     <script src="assets/js/jquery.min.js"></script>
     <script src="assets/js/vendor/jquery-2.1.4.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.3/umd/popper.min.js"></script>
@@ -138,19 +138,32 @@
 	<!-- Control Center Js -->
 	<script src="ccenter.js"></script>
 	<script>
-	function sync_gps_data() {
-	  $.ajax("../gps.php?all=1", {
-		success: function(data) {
-		  $("#numberofsats").text(data.split(',')[0]);
-		  $("#alt").text(data.split(',')[4]);
-		  $("#heading").text(data.split(',')[3]);
-		  $("#latlon").text(data.split(',')[1] + "," + data.split(',')[2]);
-		  $("#latestrefresh").text(new Date().toUTCString());
-		  calc_distance(data.split(',')[1],data.split(',')[2], data.split(',')[0]);
-		},
-		error: function() {
-		}
-	  });
+	async function sync_gps_data() {
+    var received_msg;
+    if ("WebSocket" in window) {
+
+       // Let us open a web socket
+       var ws = new WebSocket("ws://192.168.2.1:9002");
+
+       ws.onmessage = function (evt) {
+          data = evt.data;
+          $("#numberofsats").text(data.split(',')[0]);
+          $("#alt").text(data.split(',')[4]);
+          $("#heading").text(data.split(',')[3]);
+          $("#latlon").text(data.split(',')[1] + "," + data.split(',')[2]);
+          $("#latestrefresh").text(new Date().toUTCString());
+       };
+
+       ws.onclose = function() {
+
+          // websocket is closed.
+          console.log("Connection is closed...");
+       };
+    } else {
+
+       // The browser doesn't support WebSocket
+       alert("WebSocket NOT supported by your Browser!");
+    }
 	}
 	function sync_takeoffpos() {
 	  $.ajax("../ReadTakeOffPositions.php", {
@@ -160,24 +173,20 @@
 		  $("#headingtop").text(data.split(',')[3]);
 		  $("#latlontop").text(data.split(',')[2] + "," + data.split(',')[1]);
 		  $("#latestrefreshtop").text(new Date().toUTCString());
+      calc_distance(data.split(',')[1],data.split(',')[2], data.split(',')[0]);
 		},
 		error: function() {
 		}
 	  });
 	}
 	function set_takeoffpos() {
-	  $.ajax("../gps.php?all=1", {
-		success: function(data) {
-		  $.ajax("../AddTakeOffPositions.php?alt="+data.split(',')[4]+"&heading="+data.split(',')[3]+"&lat="+data.split(',')[2]+"&lon="+data.split(',')[1]+"&numsat="+data.split(',')[0], {
-			success: function(data) {
-			  sync_takeoffpos();
-			},
-			error: function() {
-			}
-		  });
-		},
-		error: function() {
-		}
+    var alt = document.getElementById('alt').innerHTML;
+    var heading = document.getElementById('heading').innerHTML;
+    var latlong = String(document.getElementById('latlon').innerHTML);
+    var numberofsats = document.getElementById('numberofsats').innerHTML;
+    console.log(alt + heading + latlong + numberofsats);
+	  $.ajax("../AddTakeOffPositions.php?alt="+alt+"&heading="+heading+"&lat="+latlong.split(",")[0]+"&lon="+latlong.split(",")[1]+"&numsat="+numberofsats, {
+		  success: function(data) {},error: function() {}
 	  });
 	}
 	function getDistanceFromLatLonInKm(lat1,lon1,lat2,lon2) {
@@ -203,7 +212,6 @@
 				success: function(data) {
 					lat2=data.split(',')[2];
 					lon2=data.split(',')[1];
-					console.log(lat1,lon1,lat2,lon2)
 					var dist = getDistanceFromLatLonInKm(lat1,lon1,lat2,lon2);
 				  if(sats<8){
 					$("#dist").text("Not enough Satellites!");
@@ -211,32 +219,24 @@
 					$("#dist").text(dist.toFixed(3));
 				  }
 					$("#latestrefreshdist").text(new Date().toUTCString());
-				},error: function() {  }  });
-	  }
+		  },error: function() {
+    }  });
+	}
 	function sleep(ms) {
 	  return new Promise(resolve => setTimeout(resolve, ms));
 	}
-	async function sync(){
+  async function sync(){
 	  do {
 		await sleep(1000);
-		sync_gps_data();
 		sync_takeoffpos();
 	  } while (1){}
 	}
 	$(document).ready(function() {
-	  calc_distance();
-	  sync_takeoffpos();
-	  sync_gps_data();
-	  sync();
-	});
-	$("#refreshtop").click(function(){
-	  sync_takeoffpos();
+		sync_gps_data();
+    sync();
 	});
 	$("#set_takeoff").click(function(){
 	  set_takeoffpos();
-	});
-	$("#refresh").click(function(){
-	  sync_gps_data();
 	});
 	</script>
 </body>

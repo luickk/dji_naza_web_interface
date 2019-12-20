@@ -3,7 +3,7 @@ A webinterface for the Naza V2 flight controller. The webinterface is built on t
 
 ## Installation
 
-To use the web interface you needto  add <br>
+To use the web interface you need to  add <br>
 the www-data user to sudoers file as root permitted. <br>
 `/etc/sudoers -> www-data ALL=(ALL)    NOPASSWD: ALL` - only for debugging purposes <br>
 
